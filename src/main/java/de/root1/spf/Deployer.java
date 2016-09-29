@@ -340,7 +340,6 @@ class Deployer implements Runnable {
 
                     logger.info("Start plugin: {}", container.getPlugin().getClass().getName());
                     container.start();
-                    PluginLocator.getInstance().registerPlugin(container);
                     logger.info("Deployment of plugin [{}] finished.", container.getName());
                     archivePluginList.put(container.getArchive(), container);
                     lastPrio = prio;
@@ -398,7 +397,6 @@ class Deployer implements Runnable {
             for (final PluginContainer pluginContainer : pluginContainerList) {
                 logger.info("Undeploy plugin [{}]", pluginContainer.getName());
                 archivePluginList.remove(archive, pluginContainer);
-                PluginLocator.getInstance().unregisterPlugin(pluginContainer);
                 logger.info("Undeploying: [{}@{}] invoking stop() ... ", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
                 pluginContainer.stop();
                 logger.info("Undeploying: [{}@{}] invoking stop() ... *done*", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());

@@ -36,21 +36,15 @@ public class SimplePluginFramework {
 
     public SimplePluginFramework(File pluginFolder) {
         if (!pluginFolder.exists()) {
-            System.out.println("Creating dir " + pluginFolder.getAbsolutePath());
+            log.debug("Creating dir {}", pluginFolder.getAbsolutePath());
             pluginFolder.mkdirs();
         }
-
-        log.info("Testing SPF ...");
-        long start = System.currentTimeMillis();
-        log.debug("thread {}", Thread.currentThread());
-
-        ServerInfo.getInstance().get();
 
         // Starting deployer
         deployer = new Deployer(pluginFolder);
 
         deployerThread = new Thread(deployer);
-        deployerThread.setName("Deployer");
+        deployerThread.setName("PluginDeployer");
         deployerThread.setDaemon(true);
     }
     
@@ -64,6 +58,18 @@ public class SimplePluginFramework {
     public List<PluginContainer> getPluginContainerList() {
         deployer.waitForInitialDeployment();
         return deployer.getPlugins();
+    }
+    
+    public void startPlugins() {
+        for (PluginContainer plugin : deployer.getPlugins()) {
+            plugin.start();
+        }
+    }
+    
+    public void stopPlugins() {
+        for (PluginContainer plugin : deployer.getPlugins()) {
+            plugin.stop();
+        }
     }
 
 }
