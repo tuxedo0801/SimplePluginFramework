@@ -39,6 +39,7 @@ public interface PluginInterface {
 
     public void startPlugin();
     public void stopPlugin();
+    public String getPluginId();
     
 
 }

@@ -43,6 +43,12 @@ public class TestPlugin1 implements PluginInterface {
     public void stopPlugin() {
         System.out.println("TestPlugin1 stopped");
     }
+    
+    public String getPluginId() {
+        return getClass().getName();
+    }
+    
+   
 
 
 }
