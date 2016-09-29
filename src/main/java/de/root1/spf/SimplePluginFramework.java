@@ -48,7 +48,7 @@ public class SimplePluginFramework {
         deployerThread.setDaemon(true);
     }
 
-    public void start(boolean wait) {
+    public void startLoading(boolean wait) {
         deployerThread.start();
         if (wait) {
             deployer.waitForInitialDeployment();

@@ -319,34 +319,6 @@ class Deployer implements Runnable {
                 // sort order for plugin create/start
                 Collections.sort(pluginsFromLists);
 
-                /**
-                 * Create and start plugins in well defined order. This totally
-                 * depends on plugin priority
-                 */
-                int lastPrio = -1;
-                boolean modulesStarted = false;
-                for (final PluginContainer container : pluginsFromLists) {
-
-                    if (!modulesStarted) {
-                        logger.info("\\/----------STARTING-PLUGINS---------------\\/");
-                        modulesStarted = true;
-                    }
-                    int prio = container.getPriority();
-                    if (lastPrio != prio) {
-                        logger.debug("Processing prio no. {}", prio);
-                    }
-
-                    logger.info("Starting plugin lifecycle [{}]", container.getName());
-
-                    logger.info("Start plugin: {}", container.getPlugin().getClass().getName());
-                    container.start();
-                    logger.info("Deployment of plugin [{}] finished.", container.getName());
-                    archivePluginList.put(container.getArchive(), container);
-                    lastPrio = prio;
-                }
-                if (modulesStarted) {
-                    logger.info("/\\----------STARTING-PLUGINS-FINISHED------/\\");
-                }
                 logger.info("/\\------FINISHED-DEPLOY-PROCESS------/\\");
 
                 if (!initialDeploymentDone) {
