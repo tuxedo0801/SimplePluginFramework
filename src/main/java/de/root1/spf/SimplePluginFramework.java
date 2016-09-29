@@ -63,6 +63,7 @@ public class SimplePluginFramework {
     public void startPlugins() {
         for (PluginContainer plugin : deployer.getPlugins()) {
             try {
+                log.info("Starting [{}]", plugin.getPlugin().getPluginId());
                 plugin.start();
             } catch (Throwable t) {
                 log.error("Cannot start plugin [" + plugin.getPlugin().getPluginId() + "]", t);
@@ -73,6 +74,7 @@ public class SimplePluginFramework {
     public void stopPlugins() {
         for (PluginContainer plugin : deployer.getPlugins()) {
             try {
+                log.info("Stopping [{}]", plugin.getPlugin().getPluginId());
                 plugin.stop();
             } catch (Throwable t) {
                 log.error("Cannot stop plugin [" + plugin.getPlugin().getPluginId() + "]", t);

@@ -280,7 +280,6 @@ class Deployer implements Runnable {
                 int toDeployCount = archivesToDeploy.size();
                 int maxLoops = (int) (archivesToDeploy.size() * ((archivesToDeploy.size() / 2D) + 0.5D));
                 logger.debug("Trying to deploy {} archives with max. {} loops. Archive-List: \n{}", new Object[]{archivesToDeploy.size(), maxLoops, archivesToDeploy});
-                List<PluginContainer> pluginsFromLists = new ArrayList<PluginContainer>();
                 int loop = 0;
                 Archive archive;
                 while (!archivesToDeploy.isEmpty()) {
@@ -292,11 +291,11 @@ class Deployer implements Runnable {
                     archive = archivesToDeploy.remove(0);
                     logger.info("Trying to deploy archive [{}]. Loop={}", archive.getName(), loop);
                     try {
-                        List<PluginContainer> moduleContainerList = archive.getPluginContainerList();
-                        for (PluginContainer container : moduleContainerList) {
-                            pluginsFromLists.add(container);
+                        List<PluginContainer> pluginContainerFromArchive = archive.getPluginContainerList();
+                        for (PluginContainer plugincontainer : pluginContainerFromArchive) {
+                            archivePluginList.put(archive, plugincontainer);
                         }
-                        logger.info("Loading archive [{}] *done*. Loaded {} plugins: {}", new Object[]{archive.getName(), moduleContainerList.size(), moduleContainerList});
+                        logger.info("Loading archive [{}] *done*. Loaded {} plugins: {}", new Object[]{archive.getName(), pluginContainerFromArchive.size(), pluginContainerFromArchive});
                     } catch (Exception ex) {
                         if (logger.isDebugEnabled()) {
                             ex.printStackTrace();
@@ -316,8 +315,6 @@ class Deployer implements Runnable {
                     logger.error("***** One or more plugins failed to load. *****");
                 }
 
-                // sort order for plugin create/start
-                Collections.sort(pluginsFromLists);
 
                 logger.info("/\\------FINISHED-DEPLOY-PROCESS------/\\");
 
