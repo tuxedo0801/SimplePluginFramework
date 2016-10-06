@@ -39,10 +39,10 @@ public class AppTest {
         List<PluginContainer> pluginContainerList = spf.getPluginContainerList();
         System.out.println(pluginContainerList);
         
-        try {
-            Thread.sleep(20000);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(AppTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            Thread.sleep(20000);
+//        } catch (InterruptedException ex) {
+//            Logger.getLogger(AppTest.class.getName()).log(Level.SEVERE, null, ex);
+//        }
     }
 }
