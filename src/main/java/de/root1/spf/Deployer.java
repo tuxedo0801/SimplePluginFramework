@@ -1,21 +1,20 @@
 /**
  * This file is part of "Simple Plugin Framework".
- * 
- *  "Simple Plugin Framework" is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- * 
- *  "Simple Plugin Framework" is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- * 
- *  You should have received a copy of the GNU General Public License
- *  along with "Simple Plugin Framework".  
- *  If not, see <http://www.gnu.org/licenses/>.
- * 
- *  (c) 2016, Alexander Christian <info@root1.de>
+ *
+ * "Simple Plugin Framework" is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * "Simple Plugin Framework" is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * "Simple Plugin Framework". If not, see <http://www.gnu.org/licenses/>.
+ *
+ * (c) 2016, Alexander Christian <info@root1.de>
  */
 package de.root1.spf;
 
@@ -82,12 +81,14 @@ class Deployer implements Runnable {
      * Monitor object, used with "waitForInitialDeploymentDone"
      */
     private final Object MONITOR = new Object();
+    private final SimplePluginFramework spf;
 
     /*
      * Package private constructor 
      */
-    Deployer(File pluginFolder) {
-        
+    Deployer(SimplePluginFramework spf, File pluginFolder) {
+
+        this.spf = spf;
         this.pluginFolder = pluginFolder;
         this.tempPluginFolder = new File(pluginFolder, "tmp");
 
@@ -294,6 +295,7 @@ class Deployer implements Runnable {
                         List<PluginContainer> pluginContainerFromArchive = archive.getPluginContainerList();
                         for (PluginContainer plugincontainer : pluginContainerFromArchive) {
                             archivePluginList.put(archive, plugincontainer);
+                            spf.doLoaded(plugincontainer);
                         }
                         logger.info("Loading archive [{}] *done*. Loaded {} plugins: {}", new Object[]{archive.getName(), pluginContainerFromArchive.size(), pluginContainerFromArchive});
                     } catch (Exception ex) {
@@ -308,13 +310,12 @@ class Deployer implements Runnable {
                 }
 
                 if (loop <= maxLoops) {
-                    if (toDeployCount>0) {
+                    if (toDeployCount > 0) {
                         logger.info("All archives loaded successfully.");
                     }
                 } else {
                     logger.error("***** One or more plugins failed to load. *****");
                 }
-
 
                 logger.info("/\\------FINISHED-DEPLOY-PROCESS------/\\");
 
@@ -351,6 +352,7 @@ class Deployer implements Runnable {
         logger.info("Deployer has been stopped.");
     }
 
+
     /**
      * Undeploys a given archive. On the plugin, first invokeStopLifecycle() is
      * called, followed by invokeDestroyLifecycle(). Afterwards the GC will do
@@ -367,7 +369,9 @@ class Deployer implements Runnable {
                 logger.info("Undeploy plugin [{}]", pluginContainer.getName());
                 archivePluginList.remove(archive, pluginContainer);
                 logger.info("Undeploying: [{}@{}] invoking stop() ... ", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
+                spf.doPreStop(pluginContainer);
                 pluginContainer.stop();
+                spf.doPostStop(pluginContainer);
                 logger.info("Undeploying: [{}@{}] invoking stop() ... *done*", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
 
                 logger.info("Undeploy plugin [{}] *done*", pluginContainer.getName());

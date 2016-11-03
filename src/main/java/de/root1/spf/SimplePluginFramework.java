@@ -33,6 +33,7 @@ public class SimplePluginFramework {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Thread deployerThread;
     private final Deployer deployer;
+    private DeploymentListener deploymentListener;
 
     public SimplePluginFramework(File pluginFolder) {
         if (!pluginFolder.exists()) {
@@ -41,13 +42,17 @@ public class SimplePluginFramework {
         }
 
         // Starting deployer
-        deployer = new Deployer(pluginFolder);
+        deployer = new Deployer(this, pluginFolder);
 
         deployerThread = new Thread(deployer);
         deployerThread.setName("PluginDeployer");
         deployerThread.setDaemon(true);
     }
 
+    /**
+     * Starting deployer thread
+     * @param wait if true, wait until all plugins have been initially deployed
+     */
     public void startLoading(boolean wait) {
         deployerThread.start();
         if (wait) {
@@ -64,7 +69,9 @@ public class SimplePluginFramework {
         for (PluginContainer plugin : deployer.getPlugins()) {
             try {
                 log.info("Starting [{}]", plugin.getPlugin().getPluginId());
+                doPreStart(plugin);
                 plugin.start();
+                doPostStart(plugin);
             } catch (Throwable t) {
                 log.error("Cannot start plugin [" + plugin.getPlugin().getPluginId() + "]", t);
             }
@@ -75,12 +82,76 @@ public class SimplePluginFramework {
         for (PluginContainer plugin : deployer.getPlugins()) {
             try {
                 log.info("Stopping [{}]", plugin.getPlugin().getPluginId());
+                doPreStop(plugin);
                 plugin.stop();
+                doPostStop(plugin);
             } catch (Throwable t) {
                 log.error("Cannot stop plugin [" + plugin.getPlugin().getPluginId() + "]", t);
             }
 
         }
     }
+
+    public void setDeploymentListener(DeploymentListener deploymentListener) {
+        this.deploymentListener = deploymentListener;
+    }
+
+    DeploymentListener getDeploymentListener() {
+        return deploymentListener;
+    }
+
+    
+    
+    void doPostStart(PluginContainer plugincontainer) {
+        if (getDeploymentListener() != null) {
+            try {
+                getDeploymentListener().postStart(plugincontainer.getPlugin());
+            } catch (Exception e) {
+                log.error("Error in deploymentlistener", e);
+            }
+        }
+    }
+
+    void doPreStart(PluginContainer plugincontainer) {
+        if (getDeploymentListener() != null) {
+            try {
+                getDeploymentListener().preStart(plugincontainer.getPlugin());
+            } catch (Exception e) {
+                log.error("Error in deploymentlistener", e);
+            }
+        }
+    }
+    
+    void doPostStop(PluginContainer plugincontainer) {
+        if (getDeploymentListener() != null) {
+            try {
+                getDeploymentListener().postStop(plugincontainer.getPlugin());
+            } catch (Exception e) {
+                log.error("Error in deploymentlistener", e);
+            }
+        }
+    }
+
+    void doPreStop(PluginContainer plugincontainer) {
+        if (getDeploymentListener() != null) {
+            try {
+                getDeploymentListener().preStop(plugincontainer.getPlugin());
+            } catch (Exception e) {
+                log.error("Error in deploymentlistener", e);
+            }
+        }
+    }
+
+    void doLoaded(PluginContainer plugincontainer) {
+        if (getDeploymentListener() != null) {
+            try {
+                getDeploymentListener().loaded(plugincontainer.getPlugin());
+            } catch (Exception e) {
+                log.error("Error in deploymentlistener", e);
+            }
+        }
+    }
+    
+    
 
 }
