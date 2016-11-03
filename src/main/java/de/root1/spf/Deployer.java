@@ -174,7 +174,7 @@ class Deployer implements Runnable {
 
     @Override
     public void run() {
-        logger.info("Deployer is running");
+        logger.debug("Deployer is running");
         while (!stopped) {
 
             File[] fileList = pluginFolder.listFiles();
@@ -290,19 +290,19 @@ class Deployer implements Runnable {
                         break;
                     }
                     archive = archivesToDeploy.remove(0);
-                    logger.info("Trying to deploy archive [{}]. Loop={}", archive.getName(), loop);
+                    logger.debug("Trying to deploy archive [{}]. Loop={}", archive.getName(), loop);
                     try {
                         List<PluginContainer> pluginContainerFromArchive = archive.getPluginContainerList();
                         for (PluginContainer plugincontainer : pluginContainerFromArchive) {
                             archivePluginList.put(archive, plugincontainer);
                             spf.doLoaded(plugincontainer);
                         }
-                        logger.info("Loading archive [{}] *done*. Loaded {} plugins: {}", new Object[]{archive.getName(), pluginContainerFromArchive.size(), pluginContainerFromArchive});
+                        logger.info("Loading archive [{}] done. Loaded {} plugins: {}", new Object[]{archive.getName(), pluginContainerFromArchive.size(), pluginContainerFromArchive});
                     } catch (Exception ex) {
                         if (logger.isDebugEnabled()) {
                             ex.printStackTrace();
                         }
-                        logger.info("Loading plugin from archive [" + archive.getName() + "] failed. Reordering list and trying again later. Error details: " + ex.getClass().getName() + ": " + ex.getMessage());
+                        logger.debug("Loading plugin from archive [" + archive.getName() + "] failed. Reordering list and trying again later. Error details: " + ex.getClass().getName() + ": " + ex.getMessage());
                         archive.setLastDeployError(ex);
                         archive.undeployed();
                         archivesToDeploy.add(archive);
@@ -368,13 +368,13 @@ class Deployer implements Runnable {
             for (final PluginContainer pluginContainer : pluginContainerList) {
                 logger.info("Undeploy plugin [{}]", pluginContainer.getName());
                 archivePluginList.remove(archive, pluginContainer);
-                logger.info("Undeploying: [{}@{}] invoking stop() ... ", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
+                logger.debug("Undeploying: [{}@{}] invoking stop() ... ", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
                 spf.doPreStop(pluginContainer);
                 pluginContainer.stop();
                 spf.doPostStop(pluginContainer);
-                logger.info("Undeploying: [{}@{}] invoking stop() ... *done*", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
+                logger.debug("Undeploying: [{}@{}] invoking stop() ... *done*", pluginContainer.getClass().getName(), archive.getArchiveFile().getName());
 
-                logger.info("Undeploy plugin [{}] *done*", pluginContainer.getName());
+                logger.debug("Undeploy plugin [{}] *done*", pluginContainer.getName());
             }
             archive.undeployed();
         } catch (ModuleInstantiationException ex) {
