@@ -264,7 +264,7 @@ class Deployer implements Runnable {
                 boolean modulesStopped = false;
                 for (Archive archive : archivesToUndeploy) {
                     if (!modulesStopped) {
-                        logger.info("\\/----------STOPPING-MODULES-FINISHED------\\/");
+                        logger.info("\\/----------STOPPING-MODULES-STARTED------\\/");
                         modulesStopped = true;
                     }
                     undeployArchive(archive);
