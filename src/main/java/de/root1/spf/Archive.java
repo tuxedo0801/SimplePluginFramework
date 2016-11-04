@@ -175,7 +175,10 @@ public class Archive {
                 pluginCount++;
             }
         } catch (MalformedURLException ex) {
-            logger.warn("Error checking file ["+file.getAbsolutePath()+"].", ex);
+            logger.warn("Problem checking file ["+file.getAbsolutePath()+"].", ex);
+            return false;
+        } catch (java.util.ServiceConfigurationError err) {
+            logger.warn("Error checking file ["+file.getAbsolutePath()+"].", err);
             return false;
         }
 
