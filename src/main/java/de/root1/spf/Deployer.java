@@ -20,9 +20,9 @@ package de.root1.spf;
 
 import com.google.common.collect.ArrayListMultimap;
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.slf4j.Logger;
@@ -145,18 +145,21 @@ class Deployer implements Runnable {
             logger.error("Exiting due to path problems...");
             System.exit(1);
         }
-        File[] tempFiles = tempPluginFolder.listFiles();
+        File[] tempFiles = tempPluginFolder.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.isFile() && f.getName().endsWith(".jar");
+            }
+        });
         int filesDeleted = 0;
         int fileCount = 0;
         for (File file : tempFiles) {
-            if (file.isFile() && file.getName().endsWith(".jar")) {
-                logger.trace("Removing: {}", file.getName());
-                fileCount++;
-                boolean deleted = file.delete();
-                logger.trace("Successfull? -> {}", deleted);
-                if (deleted) {
-                    filesDeleted++;
-                }
+            logger.trace("Removing: {}", file.getName());
+            fileCount++;
+            boolean deleted = file.delete();
+            logger.trace("Successfull? -> {}", deleted);
+            if (deleted) {
+                filesDeleted++;
             }
         }
         logger.info("Removed {} of {} temp files.", filesDeleted, fileCount);
@@ -177,7 +180,12 @@ class Deployer implements Runnable {
         logger.debug("Deployer is running");
         while (!stopped) {
 
-            File[] fileList = pluginFolder.listFiles();
+            File[] fileList = pluginFolder.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File f) {
+                    return f.isFile() && f.getName().endsWith(".jar");
+                }
+            });
             FileList newFileList = new FileList(fileList);
 
             boolean needToDeploy = false;
@@ -351,7 +359,6 @@ class Deployer implements Runnable {
 
         logger.info("Deployer has been stopped.");
     }
-
 
     /**
      * Undeploys a given archive. On the plugin, first invokeStopLifecycle() is
