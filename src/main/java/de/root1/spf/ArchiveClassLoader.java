@@ -20,17 +20,27 @@
 package de.root1.spf;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ClassLoader for temp archive files
  * @author achristian
  */
 public class ArchiveClassLoader extends URLClassLoader {
+    
+    private final Logger log = LoggerFactory.getLogger(getClass());
     
     private String name;
     private final static Pattern archiveTmpFilePattern = Pattern.compile("ARCHIVE_.+_\\d+?\\.deploytmp\\.jar");
@@ -52,8 +62,5 @@ public class ArchiveClassLoader extends URLClassLoader {
     public String toString() {
         return "ArchiveClassLoader{" + "archive=" + name + '}';
     }
-    
-    
-    
-   
+	
 }

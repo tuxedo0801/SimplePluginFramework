@@ -19,8 +19,10 @@
 package de.root1.spf;
 
 import com.google.common.collect.ArrayListMultimap;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -93,27 +95,9 @@ class Deployer implements Runnable {
         this.tempPluginFolder = new File(pluginFolder, "tmp");
 
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(e.getClass());
-                sb.append(": ");
-                sb.append(e.getMessage());
-                sb.append("\n");
-                StackTraceElement[] stackTrace = e.getStackTrace();
-                for (int i = 0; i < stackTrace.length; i++) {
-                    sb.append("\tat ");
-                    sb.append(stackTrace[i].getClassName());
-                    sb.append(".");
-                    sb.append(stackTrace[i].getMethodName());
-                    sb.append("(");
-                    sb.append(stackTrace[i].getFileName());
-                    sb.append(":");
-                    sb.append(stackTrace[i].getLineNumber());
-                    sb.append(")\n");
-                }
-                logger.error(sb.toString());
+                logger.error("Uncaught exception happened during deploy in thread ["+t.getName()+"]", e);
             }
         });
 

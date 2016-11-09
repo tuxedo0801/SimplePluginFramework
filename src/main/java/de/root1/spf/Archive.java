@@ -37,7 +37,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import de.root1.spf.PluginInterface;
+import java.util.HashSet;
 import java.util.ServiceLoader;
+import de.root1.spf.utils.ServiceFinder;
 
 /**
  *
@@ -46,9 +48,9 @@ import java.util.ServiceLoader;
 public class Archive {
 
     /**
-     * The logger used for this class
+     * The log used for this class
      */
-    private final static Logger logger = LoggerFactory.getLogger(Archive.class);
+    private final static Logger log = LoggerFactory.getLogger(Archive.class);
 
     private static final String PLUGIN_ARCHIVE_EXTENSION = "JAR";
 
@@ -63,6 +65,8 @@ public class Archive {
     private final DelegatingArchiveClassLoader delegatingModuleClassLoader = Deployer.getDelegatingPluginClassLoader();
     private ArchiveClassLoader archiveClassLoader;
     private final Deployer deployer;
+    
+    public static Set<Class> loadedPluginClasses = new HashSet<>();
 
     public Archive(Deployer deployer, File file) {
         
@@ -99,14 +103,14 @@ public class Archive {
         try {
             tmpDeployFile = File.createTempFile("ARCHIVE_" + file.getName() + "_", ".deploytmp.jar", deployer.getPluginTempPath());
             tmpDeployFile.deleteOnExit();
-            logger.debug("Copying [{}] to deploy temp [{}]", file, tmpDeployFile);
+            log.debug("Copying [{}] to deploy temp [{}]", file, tmpDeployFile);
             Utils.copyFile(file, tmpDeployFile);
         } catch (IOException ex) {
             pluginContainerList.clear();
             throw new ModuleInstantiationException("Can't create temp file for deployment due to IOException. Error was: " + ex.getMessage());
         }
 
-        logger.trace("Loading archive via file [{}]", tmpDeployFile.getName());
+        log.trace("Loading archive via file [{}]", tmpDeployFile.getName());
         // We need to create a new classloader, and the URLClassLoader is very convinient.
         // Load the class that was specified
 
@@ -114,25 +118,22 @@ public class Archive {
         try {
 
             archiveClassLoader = new ArchiveClassLoader(tmpDeployFile, delegatingModuleClassLoader);
-//            List<String> annotationList = getAnnotatedClasses(tmpDeployFile);
 
-            logger.debug("ArchiveClassLoader for archive [{}]: {}", file.getName(), archiveClassLoader);
+            log.debug("ArchiveClassLoader for archive [{}]: {}", file.getName(), archiveClassLoader);
             delegatingModuleClassLoader.addArchiveClassLoader(archiveClassLoader);
 
-            ServiceLoader<PluginInterface> loader = ServiceLoader.load(PluginInterface.class, archiveClassLoader);
-            Iterator<PluginInterface> pluginIterator = loader.iterator();
-
-            while (pluginIterator.hasNext()) {
-                PluginInterface plugin = pluginIterator.next();
-                logger.debug("Found plugin class {}", plugin.getClass());
-                pluginContainerList.add(new PluginContainer(this, plugin));
+            ServiceFinder finder = new ServiceFinder(archiveClassLoader, file);
+            List<Class> serviceImplementations = finder.getServiceImplementations(de.root1.spf.PluginInterface.class);
+            for (Class pluginImplClass : serviceImplementations) {
+                pluginContainerList.add(new PluginContainer(this, (PluginInterface) pluginImplClass.newInstance()));
+                log.info("Added: {}", pluginImplClass);
             }
-
+            
             return pluginContainerList;
 
         } catch (NoClassDefFoundError ex) {
             pluginContainerList.clear();
-            if (logger.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 ex.printStackTrace();
             }
             tmpDeployFile.delete();
@@ -162,23 +163,26 @@ public class Archive {
      * @return true, if accepted, false if not
      */
     public static boolean accepted(File file) {
-        logger.debug("Checking file: {}", file.getName());
+        log.debug("Checking file: {}", file.getName());
 
         int pluginCount = 0;
         // get plugin count from archive
         try {
             ArchiveClassLoader acl = new ArchiveClassLoader(file, Deployer.getDelegatingPluginClassLoader());
-            ServiceLoader<PluginInterface> load = ServiceLoader.load(PluginInterface.class, acl);
-            Iterator<PluginInterface> it = load.iterator();
-            while (it.hasNext()) {
-                it.next();
+            ServiceFinder finder = new ServiceFinder(acl, file);
+            List<Class> serviceImplementations = finder.getServiceImplementations(de.root1.spf.PluginInterface.class);
+            for (Class clazz : serviceImplementations) {
+                log.info("detected: {}", clazz);
                 pluginCount++;
             }
         } catch (MalformedURLException ex) {
-            logger.warn("Problem checking file ["+file.getAbsolutePath()+"].", ex);
+            log.warn("Problem checking file ["+file.getAbsolutePath()+"].", ex);
             return false;
         } catch (java.util.ServiceConfigurationError err) {
-            logger.warn("Error checking file ["+file.getAbsolutePath()+"].", err);
+            log.warn("Error checking file ["+file.getAbsolutePath()+"].", err);
+            return false;
+        } catch (IOException | ClassNotFoundException ex) {
+            log.warn("Problem checking file ["+file.getAbsolutePath()+"].", ex);
             return false;
         }
 
@@ -220,7 +224,7 @@ public class Archive {
         }
 
         Archive other = (Archive) obj;
-        logger.debug("Comparing: \n{}\n with\n{}", this, other);
+        log.debug("Comparing: \n{}\n with\n{}", this, other);
 
         if (file.getName().equals(other.file.getName())
                 && // do not compare plugin list, as this information is not directly available after instantiation of Archive class

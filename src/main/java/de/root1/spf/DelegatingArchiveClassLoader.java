@@ -69,7 +69,7 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
             throw new ClassNotFoundException("Class " + name + " not found.");
         }
 
-        if (name.startsWith("de.roo1.mas.")) {
+        if (name.startsWith("de.roo1.spf.")) {
             logger.info("Filtered class: {}. Delegating directly to parent.", name);
             return super.findClass(name);
         }
