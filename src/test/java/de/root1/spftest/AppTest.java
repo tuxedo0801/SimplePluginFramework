@@ -34,7 +34,7 @@ public class AppTest {
 
     @org.junit.Test
     public void testSpfStart() throws UnsupportedEncodingException {
-        SimplePluginFramework spf = new SimplePluginFramework(new File ("./plugins"));
+        SimplePluginFramework spf = new SimplePluginFramework(new File ("./plugins"), 2000);
         spf.startLoading(true);
         List<PluginContainer> pluginContainerList = spf.getPluginContainerList();
         System.out.println(pluginContainerList);

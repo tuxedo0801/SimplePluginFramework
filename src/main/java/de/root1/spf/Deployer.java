@@ -19,10 +19,8 @@
 package de.root1.spf;
 
 import com.google.common.collect.ArrayListMultimap;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -326,7 +324,7 @@ class Deployer implements Runnable {
 
             // loop sleep time
             try {
-                Thread.sleep(1000);
+                Thread.sleep(spf.getDeployDelay());
             } catch (InterruptedException ex) {
             }
 

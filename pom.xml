@@ -47,6 +47,21 @@
             <scope>compile</scope>
         </dependency>
     </dependencies>
+    
+    <!-- upload informations for deploying the jar -->
+    <distributionManagement>
+        <repository>
+            <id>root1-releases</id>
+            <name>internal releases</name>
+            <url>http://maven.root1.de/repository/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>root1-snapshots</id>
+            <name>internal snapshots</name>
+            <url>http://maven.root1.de/repository/snapshots/</url>
+        </snapshotRepository>      
+    </distributionManagement>  
+
 </project>
 
 

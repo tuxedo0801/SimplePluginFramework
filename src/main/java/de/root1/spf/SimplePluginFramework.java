@@ -34,8 +34,10 @@ public class SimplePluginFramework {
     private final Thread deployerThread;
     private final Deployer deployer;
     private DeploymentListener deploymentListener;
+    private final int deployDelay;
 
-    public SimplePluginFramework(File pluginFolder) {
+    public SimplePluginFramework(File pluginFolder, int deployDelay) {
+        this.deployDelay = deployDelay;
         if (!pluginFolder.exists()) {
             log.debug("Creating dir {}", pluginFolder.getAbsolutePath());
             pluginFolder.mkdirs();
@@ -150,6 +152,10 @@ public class SimplePluginFramework {
                 log.error("Error in deploymentlistener", e);
             }
         }
+    }
+
+    long getDeployDelay() {
+        return deployDelay;
     }
     
     
