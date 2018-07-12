@@ -24,7 +24,6 @@ package de.root1.spf;
  *
  * @author ACHR
  */
-import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URL;

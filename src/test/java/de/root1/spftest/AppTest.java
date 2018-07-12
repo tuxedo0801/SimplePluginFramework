@@ -24,8 +24,6 @@ import de.root1.spf.SimplePluginFramework;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Unit test for simple App.

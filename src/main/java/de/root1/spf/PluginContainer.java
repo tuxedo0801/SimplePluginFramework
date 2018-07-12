@@ -19,8 +19,6 @@
  */
 package de.root1.spf;
 
-import de.root1.spf.PluginInterface;
-import de.root1.spf.PluginState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
