@@ -64,7 +64,7 @@ public class ServiceFinder {
      * @throws ClassNotFoundException 
      */
     public List<Class> getServiceImplementations(Class interfaceClass) throws IOException, ClassNotFoundException {
-        List<Class> implementations = new ArrayList<Class>();
+        List<Class> implementations = new ArrayList<>();
         List<String> strings = findAllStrings(interfaceClass.getName());
         for (String className : strings) {
             Class impl = classLoader.loadClass(className);

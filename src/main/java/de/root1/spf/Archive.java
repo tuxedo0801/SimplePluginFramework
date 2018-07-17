@@ -41,7 +41,7 @@ public class Archive {
     /**
      * The log used for this class
      */
-    private final static Logger log = LoggerFactory.getLogger(Archive.class);
+    private final static Logger LOG = LoggerFactory.getLogger(Archive.class);
 
     private static final String PLUGIN_ARCHIVE_EXTENSION = "JAR";
 
@@ -94,14 +94,14 @@ public class Archive {
         try {
             tmpDeployFile = File.createTempFile("ARCHIVE_" + file.getName() + "_", ".deploytmp.jar", deployer.getPluginTempPath());
             tmpDeployFile.deleteOnExit();
-            log.debug("Copying [{}] to deploy temp [{}]", file, tmpDeployFile);
+            LOG.debug("Copying [{}] to deploy temp [{}]", file, tmpDeployFile);
             Utils.copyFile(file, tmpDeployFile);
         } catch (IOException ex) {
             pluginContainerList.clear();
             throw new ModuleInstantiationException("Can't create temp file for deployment due to IOException. Error was: " + ex.getMessage());
         }
 
-        log.trace("Loading archive via file [{}]", tmpDeployFile.getName());
+        LOG.trace("Loading archive via file [{}]", tmpDeployFile.getName());
         // We need to create a new classloader, and the URLClassLoader is very convinient.
         // Load the class that was specified
 
@@ -110,22 +110,22 @@ public class Archive {
 
             archiveClassLoader = new ArchiveClassLoader(tmpDeployFile, delegatingModuleClassLoader);
 
-            log.debug("ArchiveClassLoader for archive [{}]: {}", file.getName(), archiveClassLoader);
+            LOG.debug("ArchiveClassLoader for archive [{}]: {}", file.getName(), archiveClassLoader);
             delegatingModuleClassLoader.addArchiveClassLoader(archiveClassLoader);
 
             ServiceFinder finder = new ServiceFinder(archiveClassLoader, file);
             List<Class> serviceImplementations = finder.getServiceImplementations(de.root1.spf.PluginInterface.class);
             for (Class pluginImplClass : serviceImplementations) {
-                pluginContainerList.add(new PluginContainer(this, (PluginInterface) pluginImplClass.newInstance()));
-                log.info("Added: {}", pluginImplClass);
+                pluginContainerList.add(new PluginContainer(this, (PluginInterface) pluginImplClass.getDeclaredConstructor().newInstance()));
+                LOG.info("Added: {}", pluginImplClass);
             }
             
             return pluginContainerList;
 
         } catch (NoClassDefFoundError ex) {
             pluginContainerList.clear();
-            if (log.isTraceEnabled()) {
-                ex.printStackTrace();
+            if (LOG.isTraceEnabled()) {
+                LOG.error("Can't load plugin class [" + currentProcessedClass + "] due to NoClassDefFoundError: " + ex.getMessage(), ex);
             }
             tmpDeployFile.delete();
             throw new ModuleInstantiationException("Can't load plugin class [" + currentProcessedClass + "] due to NoClassDefFoundError: " + ex.getMessage(), ex);
@@ -154,7 +154,7 @@ public class Archive {
      * @return true, if accepted, false if not
      */
     public static boolean accepted(File file) {
-        log.debug("Checking file: {}", file.getName());
+        LOG.debug("Checking file: {}", file.getName());
 
         int pluginCount = 0;
         // get plugin count from archive
@@ -163,17 +163,20 @@ public class Archive {
             ServiceFinder finder = new ServiceFinder(acl, file);
             List<Class> serviceImplementations = finder.getServiceImplementations(de.root1.spf.PluginInterface.class);
             for (Class clazz : serviceImplementations) {
-                log.info("detected: {}", clazz);
+                LOG.info("detected: {}", clazz);
                 pluginCount++;
             }
         } catch (MalformedURLException ex) {
-            log.warn("Problem checking file ["+file.getAbsolutePath()+"].", ex);
+            LOG.warn("Error while checking file acceptance: File path is not okay. ["+file.getAbsolutePath()+"].", ex);
             return false;
         } catch (java.util.ServiceConfigurationError err) {
-            log.warn("Error checking file ["+file.getAbsolutePath()+"].", err);
+            LOG.warn("Error while checking file acceptance: Prolem with plugin service config. ["+file.getAbsolutePath()+"].", err);
             return false;
-        } catch (IOException | ClassNotFoundException ex) {
-            log.warn("Problem checking file ["+file.getAbsolutePath()+"].", ex);
+        } catch (IOException ex) {
+            LOG.warn("Error while checking file acceptance: IO error on ["+file.getAbsolutePath()+"].", ex);
+            return false;
+        } catch (ClassNotFoundException ex) {
+            LOG.warn("Error while checking file acceptance. Classloading issue. ["+file.getAbsolutePath()+"].", ex);
             return false;
         }
 
@@ -215,7 +218,7 @@ public class Archive {
         }
 
         Archive other = (Archive) obj;
-        log.debug("Comparing: \n{}\n with\n{}", this, other);
+        LOG.debug("Comparing: \n{}\n with\n{}", this, other);
 
         if (file.getName().equals(other.file.getName())
                 && // do not compare plugin list, as this information is not directly available after instantiation of Archive class

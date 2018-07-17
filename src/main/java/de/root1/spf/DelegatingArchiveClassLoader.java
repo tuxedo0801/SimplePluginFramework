@@ -48,11 +48,11 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
     /**
      * The logger used for this class
      */
-    private final static Logger logger = LoggerFactory.getLogger(DelegatingArchiveClassLoader.class);
-    private final List<ArchiveClassLoader> archiveClassLoaders = new ArrayList<ArchiveClassLoader>();
-    private final List<String> resolvingClassLoader = Collections.synchronizedList(new ArrayList<String>());
-    private List<String> noInjectionRequired = Collections.synchronizedList(new ArrayList<String>());
-    final private Map<String, Class> cachedClazzes = new HashMap<String, Class>();
+    private final static Logger LOG = LoggerFactory.getLogger(DelegatingArchiveClassLoader.class);
+    private final List<ArchiveClassLoader> archiveClassLoaders = new ArrayList<>();
+    private final List<String> resolvingClassLoader = Collections.synchronizedList(new ArrayList<>());
+    private final List<String> noInjectionRequired = Collections.synchronizedList(new ArrayList<>());
+    final private Map<String, Class> cachedClazzes = new HashMap<>();
 
     public DelegatingArchiveClassLoader(ClassLoader parent) {
         super(parent);
@@ -61,21 +61,21 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
 
-        logger.trace("begin: Trying to find class: {} ; this={}", new Object[]{name, this});
+        LOG.trace("begin: Trying to find class: {} ; this={}", new Object[]{name, this});
 
         if (resolvingClassLoader.contains(name)) {
-            logger.trace("resolvingClassLoader=true for {}, throw ClassNotFoundException.", name);
+            LOG.trace("resolvingClassLoader=true for {}, throw ClassNotFoundException.", name);
             throw new ClassNotFoundException("Class " + name + " not found.");
         }
 
         if (name.startsWith("de.roo1.spf.")) {
-            logger.info("Filtered class: {}. Delegating directly to parent.", name);
+            LOG.info("Filtered class: {}. Delegating directly to parent.", name);
             return super.findClass(name);
         }
 
         synchronized (cachedClazzes) {
             if (cachedClazzes.containsKey(name)) {
-                logger.debug("returning cached class ...");
+                LOG.debug("returning cached class ...");
                 return cachedClazzes.get(name);
             }
         }
@@ -83,39 +83,39 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
         synchronized (archiveClassLoaders) {
 
             // first, parent CL
-            logger.trace("Trying to find via parent ...");
+            LOG.trace("Trying to find via parent ...");
             Class<?> clazz = null;
             try {
                 clazz = super.findClass(name);
-                logger.trace("Found in parent...");
+                LOG.trace("Found in parent...");
             } catch (ClassNotFoundException ex) {
-                logger.trace("Not found in parent ...");
+                LOG.trace("Not found in parent ...");
             }
 
             // if this nothing was found, try all childs CL...
             if (clazz == null) {
-                logger.trace("Trying to find via childs ...");
+                LOG.trace("Trying to find via plugins ...");
                 addResolvingCL(name);
-                clazz = findClassInModule(name);
+                clazz = findClassInPlugins(name);
                 removeResolvingCL(name);
                 if (clazz != null) {
-                    logger.trace("Found in child...");
+                    LOG.trace("Found in plugins...");
                 }
             }
 
             if (clazz == null) {
-                logger.trace("Class {} not found. Throwing ClassNotFoundException.", name);
+                LOG.trace("Class {} not found. Throwing ClassNotFoundException.", name);
                 throw new ClassNotFoundException("Class " + name + " not found.");
             }
 
 
-            if (logger.isTraceEnabled())
+            if (LOG.isTraceEnabled())
             for (Object object : clazz.getDeclaredAnnotations()){
                 Annotation annotation = (Annotation) object;
-                logger.trace("Class {} is annotated with: {}", name, annotation.annotationType().getCanonicalName());
+                LOG.trace("Class {} is annotated with: {}", name, annotation.annotationType().getCanonicalName());
             }
 
-            logger.trace("end: Clazz {} found via {}", name, clazz.getClassLoader());
+            LOG.trace("end: Clazz {} found via {}", name, clazz.getClassLoader());
             synchronized (cachedClazzes) {
                 cachedClazzes.put(name, clazz);
             }
@@ -125,126 +125,126 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        logger.trace("Trying to get resources: {}", name);
+        LOG.trace("Trying to get resources: {}", name);
 
         List<URL> urlList = new ArrayList<URL>();
 
         synchronized (archiveClassLoaders) {
             if (resolvingClassLoader.contains(name)) {
-                logger.trace("resolvingClassLoader=true, return null.");
+                LOG.trace("resolvingClassLoader=true, return null.");
                 return null;
             }
             // add all parent resources
-            logger.trace("checking parent class loader ...");
+            LOG.trace("checking parent class loader ...");
             Enumeration<URL> urls = super.getResources(name);
             int i=0;
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                logger.trace("-> found in parent: {} @ {}", url, super.toString());
+                LOG.trace("-> found in parent: {} @ {}", url, super.toString());
                 if (!urlList.contains(url)) {
                         urlList.add(url);
                 } else {
-                    logger.trace("URL {} already in list!", url);
+                    LOG.trace("URL {} already in list!", url);
                 }
                 i++;
             }
-            logger.trace("found {} in parent classloader", i);
+            LOG.trace("found {} in parent classloader", i);
 
 
             // add all child resources
             for (ArchiveClassLoader classLoader : archiveClassLoaders) {
-                logger.trace("checking child class loader {}...", classLoader);
+                LOG.trace("checking plugin-archive class loader {}...", classLoader);
                 int ii=0;
                 addResolvingCL(name);
                 Enumeration<URL> childUrls = classLoader.getResources(name);
                 removeResolvingCL(name);
                 while (childUrls.hasMoreElements()) {
                     URL url = childUrls.nextElement();
-                    logger.trace("-> found in child: {} @ {}", url, classLoader);
+                    LOG.trace("-> found in plugin: {} @ {}", url, classLoader);
                     if (!urlList.contains(url)) {
                         urlList.add(url);
                     } else {
-                        logger.trace("URL {} already in list!", url);
+                        LOG.trace("URL {} already in list!", url);
                     }
                     ii++;
                 }
-                logger.trace("found {} in child classloader", i);
+                LOG.trace("found {} in plugin-archive's classloader", i);
             }
 
         }
-        logger.trace("Resource [{}] found in: {}", name, urlList);
+        LOG.trace("Resource [{}] found in: {}", name, urlList);
         return Collections.enumeration(urlList);
     }
 
     @Override
     protected URL findResource(String name) {
-        logger.trace("Trying to find resource: {}", name);
+        LOG.trace("Trying to find resource: {}", name);
         synchronized (archiveClassLoaders) {
             if (resolvingClassLoader.contains(name)) {
-                logger.trace("resolvingClassLoader=true, return null.");
+                LOG.trace("resolvingClassLoader=true, return null.");
                 return null;
             }
             URL url = super.findResource(name);
             if (url == null) {
-                logger.trace("Trying to find via childs ...");
+                LOG.trace("Trying to find via plugins ...");
                 addResolvingCL(name);
-                url = findModuleResource(name);
+                url = findResourceInPlugins(name);
                 removeResolvingCL(name);
                 if (url != null) {
-                    logger.trace("Found in child...");
+                    LOG.trace("Found in plugins...");
                 }
             } else {
-                logger.trace("Found in parent...");
+                LOG.trace("Found in parent...");
             }
             return url;
         }
     }
 
-    private URL findModuleResource(String name) {
+    private URL findResourceInPlugins(String name) {
         synchronized (archiveClassLoaders) {
             for (ClassLoader cl : archiveClassLoaders) {
                 final URL url = cl.getResource(name);
                 if (url != null) {
-                    logger.trace("Found in child, return it!");
+                    LOG.trace("Found in plugin, return it!");
                     return url;
                 }
-                logger.trace("Nothing found in child, trying next");
+                LOG.trace("Nothing found in plugin, trying next");
             }
-            logger.trace("Nothing found in childs, returning null");
+            LOG.trace("Nothing found in plugins, returning null");
             return null;
         }
     }
 
-    private Class<?> findClassInModule(String name) {
-        logger.trace("begin: Searching in childs for {} ...", name);
+    private Class<?> findClassInPlugins(String name) {
+        LOG.trace("begin: Searching in plugin-archives for {} ...", name);
         synchronized (archiveClassLoaders) {
 
-            for (ArchiveClassLoader ucl : archiveClassLoaders) {
+            for (ArchiveClassLoader acl : archiveClassLoaders) {
                 Class<?> clazz = null;
-                logger.trace("Searching in child {} for {}",ucl,name);
+                LOG.trace("Searching in plugin-archive {} for {}",acl,name);
                 try {
-                    clazz = ucl.loadClass(name);
+                    clazz = acl.loadClass(name);
                 } catch (Throwable ex) {
-                    logger.trace("{}: {}. -> Nothing found in child for {}, trying next", new Object[]{ex.getClass(), ex.getMessage(), name});
+                    LOG.trace("{}: {}. -> Nothing found in plugin-archive for {}, trying next", new Object[]{ex.getClass(), ex.getMessage(), name});
                 }
                 if (clazz != null) {
-                    logger.trace("end: Found {} in child {}, return it!", name, ucl);
+                    LOG.trace("end: Found {} in plugin-archive {}, return it!", name, acl);
                     return clazz;
                 }
-                logger.trace("Nothing found in child {} for {}, trying next", ucl, name);
+                LOG.trace("Nothing found in plugin-archive {} for {}, trying next", acl, name);
 
             }
-            logger.trace("end: Nothing found in childs for {}, returning null", name);
+            LOG.trace("end: Nothing found in plugin-archives for {}, returning null", name);
             return null;
         }
     }
 
     public void addArchiveClassLoader(ArchiveClassLoader cl) {
-        logger.debug("Adding ArchiveClassLoader: {}", cl);
-        if (logger.isTraceEnabled()) {
+        LOG.debug("Adding ArchiveClassLoader: {}", cl);
+        if (LOG.isTraceEnabled()) {
             if (cl!=null && cl.getURLs()!=null) {
                 for (URL url : cl.getURLs()) {
-                    logger.trace("CL {} has URL: {}", cl, url.toString());                
+                    LOG.trace("CL {} has URL: {}", cl, url.toString());                
                 }
             }
         }
@@ -256,13 +256,13 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
     }
 
     public void removeArchiveClassLoader(ArchiveClassLoader cl) {
-        logger.debug("Removing ArchiveClassLoader: {}", cl);
+        LOG.debug("Removing ArchiveClassLoader: {}", cl);
         synchronized (archiveClassLoaders) {
             archiveClassLoaders.remove(cl);
         }
         Iterator<String> iterator = cachedClazzes.keySet().iterator();
         synchronized(cachedClazzes) {
-            List<String> clazzesToRemoveFromCache = new ArrayList<String>();
+            List<String> clazzesToRemoveFromCache = new ArrayList<>();
             while (iterator.hasNext()) {
                 String clazzName = iterator.next();
                 if (cl==cachedClazzes.get(clazzName).getClassLoader()) {
@@ -278,59 +278,59 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
 
     @Override
     protected Enumeration<URL> findResources(String name) throws IOException {
-        logger.trace("begin: Trying to find resources: {}", name);
+        LOG.trace("begin: Trying to find resources: {}", name);
 
-        List<URL> urlList = new ArrayList<URL>();
+        List<URL> urlList = new ArrayList<>();
 
         synchronized (archiveClassLoaders) {
             if (resolvingClassLoader.contains(name)) {
-                logger.trace("end: resolvingClassLoader=true, return null.");
+                LOG.trace("end: resolvingClassLoader=true, return null.");
                 return null;
             }
             // add all parent resources
-            logger.trace("checking parent class loader ...");
+            LOG.trace("checking parent class loader ...");
             Enumeration<URL> urls = super.findResources(name);
             int i=0;
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                logger.trace("found: {} @ {}", url, super.toString());
+                LOG.trace("found: {} @ {}", url, super.toString());
                 urlList.add(url);
                 i++;
             }
-            logger.trace("found {} in parent classloader", i);
+            LOG.trace("found {} in parent classloader", i);
 
 
             // add all child resources
             for (ArchiveClassLoader classLoader : archiveClassLoaders) {
-                logger.trace("checking child class loader {}...", classLoader);
+                LOG.trace("checking plugin class loader {}...", classLoader);
                 int ii=0;
                 addResolvingCL(name);
                 Enumeration<URL> childUrls = classLoader.findResources(name);
                 removeResolvingCL(name);
                 while (childUrls.hasMoreElements()) {
                     URL url = childUrls.nextElement();
-                    logger.trace("found: {} @ {}", url, classLoader);
+                    LOG.trace("found: {} @ {}", url, classLoader);
                     urlList.add(url);
                     ii++;
                 }
-                logger.trace("found {} in child classloaders", i);
+                LOG.trace("found {} in plugin classloaders", i);
             }
 
         }
-        logger.trace("end: Found urls: {}", urlList);
+        LOG.trace("end: Found urls: {}", urlList);
         return Collections.enumeration(urlList);
     }
 
     private void addResolvingCL(String name) {
-        logger.trace(">>> adding '{}'", name);
+        LOG.trace(">>> adding '{}'", name);
         resolvingClassLoader.add(name);
-        logger.trace(">>> contains: {}",resolvingClassLoader);
+        LOG.trace(">>>>> now contains: {}",resolvingClassLoader);
     }
 
     private void removeResolvingCL(String name) {
-        logger.trace(">>> removing '{}'", name);
+        LOG.trace(">>> removing '{}'", name);
         resolvingClassLoader.remove(name);
-        logger.trace(">>> contains: {}",resolvingClassLoader);
+        LOG.trace(">>>>> now contains: {}",resolvingClassLoader);
     }
 
     /**
@@ -338,16 +338,16 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
      * given className.
      *
      * @param className the classname that the classloader must be able to load
-     * @return the ArchiveClassLoader that is responsible for loading the given className as part of a single module
+     * @return the ArchiveClassLoader that is responsible for loading the given className as part of a single plugin
      */
     public ArchiveClassLoader findRelatedArchiveClassLoader(String className){
 
-        logger.trace("begin: Searching related classloader for class [{}]", className);
+        LOG.trace("begin: Searching related classloader for class [{}]", className);
         String path = className.replace('.', '/').concat(".class");
-        logger.trace("Searching path: [{}]", path);
+        LOG.trace("Searching path: [{}]", path);
         for (ArchiveClassLoader archiveClassLoader : archiveClassLoaders) {
 
-            logger.trace("Searching in child {}",archiveClassLoader);
+            LOG.trace("Searching in child {}",archiveClassLoader);
 
                 URL[] urls = archiveClassLoader.getURLs();
 
@@ -356,7 +356,7 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
                         JarFile jar = new JarFile(url.getFile());
                         ZipEntry entry = jar.getEntry(path);
                         if (entry!=null) {
-                            logger.trace("end: Found it: {}", archiveClassLoader);
+                            LOG.trace("end: Found it: {}", archiveClassLoader);
                             return archiveClassLoader;
                         } 
 
@@ -367,7 +367,7 @@ public class DelegatingArchiveClassLoader extends ClassLoader {
 
         }
         
-        logger.trace("end: No related classloader found for class [{}]", className);
+        LOG.trace("end: No related classloader found for class [{}]", className);
         return null;
     }
 

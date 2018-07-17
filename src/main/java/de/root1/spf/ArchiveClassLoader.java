@@ -41,7 +41,10 @@ public class ArchiveClassLoader extends URLClassLoader {
     private final File f;
     
     public ArchiveClassLoader(File f, ClassLoader parent) throws MalformedURLException {
-        super(new URL[]{f.toURI().toURL()}, parent);
+        //super(new URL[]{f.toURI().toURL()}, parent);
+        super(new URL[]{ new URL("jar:file:" + f.getAbsolutePath() + "!/") }, parent);
+        log.debug("JarURL: [{}]", "jar:file:" + f.getAbsolutePath() + "!/");
+        log.debug("ArchiveClassLoader for {} has parent {}", f.getAbsolutePath(), parent.toString());
         this.f = f;
         
         name = f.getName();
@@ -56,5 +59,33 @@ public class ArchiveClassLoader extends URLClassLoader {
     public String toString() {
         return "ArchiveClassLoader{" + "archive=" + name + '}';
     }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        log.debug("Trying to find [{}] from {}", name, f.getAbsolutePath());
+        try {
+            Class<?> clazz = super.findClass(name);
+            log.debug("Found [{}] in {}", name, f.getAbsolutePath());
+            return clazz;
+        } catch (ClassNotFoundException ex) {
+            throw new ClassNotFoundException("Class "+name+" not found in "+f.getAbsolutePath(), ex);
+        }
+    }
+
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        log.debug("Trying to load [{}] from {}", name, f.getAbsolutePath());
+        try {
+            Class<?> clazz = super.loadClass(name);
+            log.debug("Found [{}] in {}", name, f.getAbsolutePath());
+            return clazz;
+        } catch (ClassNotFoundException ex) {
+            throw new ClassNotFoundException("Class "+name+" not found in "+f.getAbsolutePath(), ex);
+        }
+    }
+    
+    
+    
+    
 	
 }

@@ -31,7 +31,7 @@ public class PluginContainer implements Comparable<PluginContainer> {
     /**
      * The logger used for this class
      */
-    private final static Logger logger = LoggerFactory.getLogger(PluginContainer.class);
+    private final static Logger LOG = LoggerFactory.getLogger(PluginContainer.class);
 
     private PluginState state = PluginState.STOPPED;
     private final PluginInterface plugin;
@@ -39,7 +39,7 @@ public class PluginContainer implements Comparable<PluginContainer> {
     private final Archive archive;
 
     protected PluginContainer(Archive archive, PluginInterface plugin) {
-        logger.debug("Creating ModuleContainer: archive={}, plugin.class={}", archive.getName(), plugin.getClass());
+        LOG.debug("Creating ModuleContainer: archive={}, plugin.class={}", archive.getName(), plugin.getClass());
         this.plugin = plugin;
         this.archive = archive;
         /**
